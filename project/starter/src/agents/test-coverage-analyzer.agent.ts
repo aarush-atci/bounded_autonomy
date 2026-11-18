@@ -8,5 +8,6 @@ import { TestCoverageResultJSONSchema } from '../types';
 export const testCoverageAnalyzerAgent = {
   description: 'Analyzes code for test coverage gaps and suggests missing test cases',
   prompt: TEST_COVERAGE_ANALYZER_PROMPT,
+  tools: ['Read', 'Grep', 'Glob', 'Skill'],
   outputSchema: TestCoverageResultJSONSchema as Record<string, unknown>
 };

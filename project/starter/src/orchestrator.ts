@@ -190,17 +190,17 @@ export class CodeReviewOrchestrator {
     try {
       logger.info(`Starting code review for ${owner}/${repo}#${prNumber}`);
 
-      // Configure SDK options with agents
-      // Note: MCP servers are configured but orchestrator will work without direct MCP access
-      // by having agents invoked for specific analysis tasks
+      // Configure SDK options with agents and MCP servers
       const sdkOptions: Options = {
         agents: {
           'code-quality-analyzer': codeQualityAnalyzerAgent,
           'test-coverage-analyzer': testCoverageAnalyzerAgent,
           'refactoring-suggester': refactoringSuggesterAgent
         },
-        // Allow Task tool to invoke subagents
-        allowedTools: ['Task']
+        // Register MCP servers for GitHub and ESLint integration
+        mcpServers: mcpServersConfig,
+        // Allow Task tool to invoke subagents and GitHub/ESLint MCP tools
+        allowedTools: ['Task', 'GitHub', 'ESLint']
       };
 
       // Prepare the orchestration prompt with detailed schema reference
@@ -242,21 +242,30 @@ Pull Request Details:
 - PR Number: ${prNumber}
 
 REQUIRED STEPS:
-1. Analyze 2 representative sample files from the PR (provided below)
-2. For EACH file, invoke all three subagents:
-   - Invoke "code-quality-analyzer" task with the file name and code content
-   - Invoke "test-coverage-analyzer" task with the file name and code content
-   - Invoke "refactoring-suggester" task with the file name and code content
+1. Use GitHub MCP to fetch all files changed in PR #${prNumber}
+   - Call GitHub MCP with: owner="${owner}", repo="${repo}", prNumber=${prNumber}
+   - Retrieve the list of changed files (at least 2 representative files)
+2. For EACH file from the PR, invoke all three subagents:
+   - Use GitHub MCP or Read tool to get the actual file content from the PR
+   - Invoke "code-quality-analyzer" task with the actual file name and code content
+   - Invoke "test-coverage-analyzer" task with the actual file name and code content
+   - Invoke "refactoring-suggester" task with the actual file name and code content
 3. Collect all results and aggregate into the report structure
 4. Calculate summary statistics:
-   - totalFiles: 2
+   - totalFiles: count of files reviewed (minimum 2)
    - overallScore: average quality score (0-100)
    - criticalIssues: count of critical severity issues
    - highPriorityTests: count of high priority test gaps
    - refactoringOpportunities: count of refactoring suggestions
 5. Create top recommendations from all analysis results
 
-SAMPLE FILES TO ANALYZE:
+GITHUB MCP INTEGRATION:
+- Use GitHub MCP to fetch real PR files using owner, repo, and PR number
+- Extract file contents from the PR changes
+- Pass actual code to the subagents for analysis
+- If GitHub MCP is unavailable, fall back to sample files (provided below):
+
+FALLBACK SAMPLE FILES:
 ${sampleFiles.map((f, i) => `
 FILE ${i + 1}: ${f.name}
 \`\`\`typescript

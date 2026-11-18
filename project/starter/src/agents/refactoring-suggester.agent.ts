@@ -8,5 +8,6 @@ import { RefactoringSuggestionJSONSchema } from '../types';
 export const refactoringSuggesterAgent = {
   description: 'Suggests architectural improvements and refactoring opportunities',
   prompt: REFACTORING_SUGGESTER_PROMPT,
+  tools: ['Read', 'Grep', 'Glob', 'Skill'],
   outputSchema: RefactoringSuggestionJSONSchema as Record<string, unknown>
 };
